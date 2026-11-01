@@ -19,6 +19,8 @@ jobs:
         run: git diff --exit-code -- deploy/k8s
       - name: Real local HTTP smoke test
         run: python scripts/run_local.py --smoke
+      - name: Create readable demonstration report
+        run: python scripts/make_demo_report.py
       - name: Build production adapter image
         run: docker build -t ubi060:ci .
       - uses: actions/upload-artifact@v4
@@ -28,4 +30,5 @@ jobs:
           path: |
             artifacts/pytest.xml
             artifacts/local-smoke.json
+            artifacts/demo-report.html
             artifacts/*.log
