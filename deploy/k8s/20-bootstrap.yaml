@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bootstrap
+  namespace: pattern
+spec:
+  backoffLimit: 4
+  template:
+    metadata:
+      labels:
+        app: bootstrap
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      containers:
+      - name: bootstrap
+        image: ubi060:dev
+        imagePullPolicy: IfNotPresent
+        command:
+        - python
+        - scripts/bootstrap_cluster.py
+        env:
+        - name: SECRET_DIR
+          value: /run/config
+        volumeMounts:
+        - name: config
+          mountPath: /run/config
+          readOnly: true
+      volumes:
+      - name: config
+        secret:
+          secretName: bootstrap-config

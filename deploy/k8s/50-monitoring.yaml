@@ -1,0 +1,199 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus
+  namespace: monitoring
+data:
+  prometheus.yml: "global:\n  scrape_interval: 5s\nrule_files:\n- /etc/prometheus/alerts.yml\n\
+    scrape_configs:\n- job_name: auth-service\n  static_configs:\n  - targets:\n \
+    \   - auth-service.pattern.svc.cluster.local:8001\n- job_name: quarantine-service\n\
+    \  static_configs:\n  - targets:\n    - quarantine-service.pattern.svc.cluster.local:8003\n\
+    - job_name: audit-service\n  static_configs:\n  - targets:\n    - audit-service.pattern.svc.cluster.local:8004\n\
+    - job_name: data-api\n  static_configs:\n  - targets:\n    - data-api.data.svc.cluster.local:8000\n\
+    - job_name: delete-guard\n  dns_sd_configs:\n  - names:\n    - guard-metrics.pattern.svc.cluster.local\n\
+    \    type: A\n    port: 8002\n"
+  alerts.yml: "groups:\n- name: ubi060\n  rules:\n  - alert: DeletionBlocks\n    annotations:\n\
+    \      summary: Рост числа отказов удаления\n    expr: sum(rate(deletion_blocked_total[1m]))\
+    \ > 0.1\n    for: 30s\n    labels:\n      severity: warning\n"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - name: tcp
+    port: 9090
+    targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v3.3.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9090
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: '1'
+            memory: 256Mi
+        readinessProbe:
+          tcpSocket:
+            port: 9090
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        startupProbe:
+          tcpSocket:
+            port: 9090
+          failureThreshold: 120
+          periodSeconds: 5
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+          readOnly: true
+        - name: storage
+          mountPath: /prometheus
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus
+      - name: storage
+        emptyDir: {}
+      securityContext:
+        fsGroup: 65534
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provision
+  namespace: monitoring
+data:
+  datasource.yaml: "apiVersion: 1\ndatasources:\n- access: proxy\n  isDefault: true\n\
+    \  name: Prometheus\n  type: prometheus\n  uid: prometheus\n  url: http://prometheus:9090\n"
+  provider.yaml: "apiVersion: 1\nproviders:\n- name: ubi060\n  options:\n    path:\
+    \ /etc/grafana/dashboards\n  type: file\n"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard
+  namespace: monitoring
+data:
+  ubi060.json: '{"uid": "ubi060", "title": "UBI.060 controlled deletion", "schemaVersion":
+    39, "version": 1, "panels": [{"id": 1, "type": "timeseries", "title": "Решения",
+    "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8}, "datasource": {"type": "prometheus",
+    "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum by(decision)(rate(deletion_requests_total[1m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "Блокировки", "gridPos": {"x": 12, "y":
+    0, "w": 12, "h": 8}, "datasource": {"type": "prometheus", "uid": "prometheus"},
+    "targets": [{"refId": "A", "expr": "sum by(rule)(rate(deletion_blocked_total[1m]))"}]},
+    {"id": 3, "type": "timeseries", "title": "Карантин", "gridPos": {"x": 0, "y":
+    8, "w": 12, "h": 8}, "datasource": {"type": "prometheus", "uid": "prometheus"},
+    "targets": [{"refId": "A", "expr": "sum(quarantine_datasets)"}]}, {"id": 4, "type":
+    "timeseries", "title": "Время проверки p95", "gridPos": {"x": 12, "y": 8, "w":
+    12, "h": 8}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets":
+    [{"refId": "A", "expr": "histogram_quantile(0.95, sum by(le)(rate(guard_check_seconds_bucket[1m])))"}]}]}'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  selector:
+    app: grafana
+  ports:
+  - name: tcp
+    port: 3000
+    targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: grafana
+        image: grafana/grafana:11.6.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: '1'
+            memory: 256Mi
+        readinessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        startupProbe:
+          tcpSocket:
+            port: 3000
+          failureThreshold: 120
+          periodSeconds: 5
+        env:
+        - name: GF_SECURITY_ADMIN_USER
+          value: admin
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grafana-auth
+              key: password
+        volumeMounts:
+        - name: provision
+          mountPath: /etc/grafana/provisioning/datasources/datasource.yaml
+          subPath: datasource.yaml
+        - name: provision
+          mountPath: /etc/grafana/provisioning/dashboards/provider.yaml
+          subPath: provider.yaml
+        - name: dashboards
+          mountPath: /etc/grafana/dashboards
+          readOnly: true
+        - name: storage
+          mountPath: /var/lib/grafana
+      volumes:
+      - name: provision
+        configMap:
+          name: grafana-provision
+      - name: dashboards
+        configMap:
+          name: grafana-dashboard
+      - name: storage
+        emptyDir: {}
+      securityContext:
+        fsGroup: 472

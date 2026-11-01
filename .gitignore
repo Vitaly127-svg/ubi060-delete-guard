@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.local/
+.env
+*.pem
+*.key
+*.db
+artifacts/
+!artifacts/.gitkeep

@@ -1,0 +1,31 @@
+name: Verify microservices
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest -q --junitxml=artifacts/pytest.xml
+      - run: python scripts/build_manifests.py && python scripts/validate_manifests.py
+      - name: Confirm committed manifests match generator
+        run: git diff --exit-code -- deploy/k8s
+      - name: Real local HTTP smoke test
+        run: python scripts/run_local.py --smoke
+      - name: Build production adapter image
+        run: docker build -t ubi060:ci .
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification
+          path: |
+            artifacts/pytest.xml
+            artifacts/local-smoke.json
+            artifacts/*.log

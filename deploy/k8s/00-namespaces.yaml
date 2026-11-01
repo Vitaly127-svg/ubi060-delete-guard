@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pattern
+  labels:
+    project: ubi060
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data
+  labels:
+    project: ubi060
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    project: ubi060
