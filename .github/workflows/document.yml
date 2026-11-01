@@ -1,0 +1,25 @@
+name: Render chapter 3
+on:
+  push:
+    paths: ['docs/chapter3.docx', '.github/workflows/document.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  document:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install headless document renderer
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libreoffice-writer poppler-utils fonts-liberation
+      - name: Render actual DOCX
+        run: |
+          mkdir -p artifacts/chapter3
+          libreoffice -env:UserInstallation=file:///tmp/ubi060-office --headless --convert-to pdf --outdir artifacts/chapter3 docs/chapter3.docx
+          test -s artifacts/chapter3/chapter3.pdf
+          pdftoppm -png -scale-to 1400 artifacts/chapter3/chapter3.pdf artifacts/chapter3/page
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chapter3-render
+          path: artifacts/chapter3/
