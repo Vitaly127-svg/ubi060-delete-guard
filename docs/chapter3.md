@@ -1,6 +1,6 @@
 # 3 Разработка микросервисов
 
-В разделе реализован программный прототип паттерна контролируемого удаления данных при угрозе УБИ.060. Проектные компоненты раздела 2 преобразованы в HTTP API, функции проверки, фоновые обработчики и декларативные файлы развёртывания. Исходные файлы подготовлены в едином репозитории ubi060-delete-guard [36]. В тексте приведены основные фрагменты работающего кода; полные файлы, зависимости, тесты и команды запуска находятся в репозитории.
+В разделе реализован программный прототип паттерна контролируемого удаления данных при угрозе УБИ.060. Проектные компоненты раздела 2 преобразованы в HTTP API, функции проверки, фоновые обработчики и декларативные файлы развёртывания. Исходные файлы размещены в едином репозитории ubi060-delete-guard [36]. В тексте приведены основные фрагменты работающего кода; полные файлы, зависимости, тесты и команды запуска находятся в репозитории.
 
 ## 3.1 Функции микросервисов
 
@@ -311,25 +311,33 @@ def consume(self, event):
 
 Файл: `deploy/nginx.conf`
 
-```python
+```nginx
 
-limit_req_status 429;
-server {
-        internal;
-        proxy_pass http://auth-service.pattern.svc.cluster.local:8001/verify;
-        proxy_pass_request_body off;
-        proxy_set_header Content-Length "";
-        proxy_set_header Authorization $http_authorization;
+http {
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    limit_req_status 429;
+    server {
+        listen 8443 ssl;
+        ssl_certificate /etc/tls/tls.crt;
+        ssl_certificate_key /etc/tls/tls.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        location = /_verify {
+            internal;
+            proxy_pass http://auth-service.pattern.svc.cluster.local:8001/verify;
+            proxy_pass_request_body off;
+            proxy_set_header Content-Length "";
+            proxy_set_header Authorization $http_authorization;
+        }
+        location ~ ^/(deletions|policies|dependencies|catalog)(/|$) {
+            limit_req zone=api burst=20 nodelay;
+            auth_request /_verify;
+            proxy_set_header Authorization $http_authorization;
+            proxy_set_header X-User "";
+            proxy_set_header X-Role "";
+            proxy_pass http://delete-guard.pattern.svc.cluster.local:8002;
+        }
     }
-    location / {
-        limit_req zone=api burst=20 nodelay;
-        auth_request /_verify;
-        proxy_set_header Authorization $http_authorization;
-        proxy_set_header X-User "";
-        proxy_set_header X-Role "";
-        proxy_pass http://delete-guard.pattern.svc.cluster.local:8002;
-    }
-    location /quarantine {
+}
 
 ```
 
@@ -538,7 +546,7 @@ Prometheus собирает deletion_requests_total{decision}, deletion_blocked_
 
 Процесс GitHub Actions описан в .github/workflows/verify.yml. Он устанавливает зависимости, запускает pytest, проверяет схемы YAML и соответствие файлов генератору, выполняет локальный HTTP-сценарий, собирает Docker-образ и сохраняет отчёты в артефакт verification. Результат процесса должен подтверждаться фактическим запуском во вкладке Actions; наличие файла workflow само по себе не является успешной сборкой [16, 36].
 
-На этапе разработки локально выполнены 26 тестов доменных функций, HTTP API и outbox, а также сценарий из 13 шагов между пятью отдельными HTTP-процессами. Получены ожидаемые ответы 202, 403, 409, восстановление после карантина, завершение PURGING и проверка цепочки аудита. Дополнительно 93 ресурса проверены по строгим JSON-схемам Kubernetes 1.33. Локальный запуск использовал SQLite и не подтверждает эксплуатацию Cassandra, RabbitMQ, сетевых политик или кластера. Для этих компонентов подготовлены манифесты и отдельная методика проверки; результаты кластерных экспериментов должны быть получены в разделе 4.
+На этапе разработки локально выполнены 28 тестов доменных функций, HTTP API, outbox и производственных адаптеров, а также сценарий из 13 шагов между пятью отдельными HTTP-процессами. Дополнительно 93 ресурса проверены по строгим JSON-схемам Kubernetes 1.33. Затем выполнено настоящее развёртывание в GitHub Actions: Minikube 1.36.0, Kubernetes 1.33.1, Calico, PostgreSQL, Cassandra и RabbitMQ. Bootstrap завершился успешно, поды микросервисов, Prometheus и Grafana перешли в Running/Ready. Сценарий из 13 шагов через HTTPS-шлюз прошёл с ожидаемыми кодами 202, 403, 409 и 410, восстановлением, окончательным удалением и проверкой журнала. Отчёт demo.json и список pod сохранены в репозитории в docs/evidence; полный запуск доступен во вкладке Actions [36]. Проверка выполнена для RF=1 и подтверждает воспроизводимость развёртывания; нагрузочные измерения и эксперименты с несколькими репликами остаются задачами раздела 4.
 
 В результате разработаны функции микросервисов, исходные кодовые элементы и средства их воспроизводимого развёртывания. Проверка реализации показывает, что контролируемое удаление, карантин, восстановление и журналирование выполняются на уровне программного прототипа. Подготовленные команды, отчёты и репозиторий позволяют последовательно показать исходную функцию, её API и наблюдаемое поведение, не подменяя будущий кластерный эксперимент заранее заявленным результатом.
 

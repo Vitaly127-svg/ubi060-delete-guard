@@ -1,0 +1,24 @@
+NAMESPACE     NAME                                       READY   STATUS      RESTARTS        AGE     IP              NODE       NOMINATED NODE   READINESS GATES
+data          cassandra-0                                1/1     Running     0               3m24s   10.244.120.69   minikube   <none>           <none>
+data          data-api-79cdf958bb-5mvdk                  1/1     Running     0               100s    10.244.120.76   minikube   <none>           <none>
+kube-system   calico-kube-controllers-7bfdc5b57c-mmkqd   1/1     Running     1 (3m36s ago)   3m43s   10.244.120.65   minikube   <none>           <none>
+kube-system   calico-node-69rm6                          1/1     Running     0               3m44s   192.168.49.2    minikube   <none>           <none>
+kube-system   coredns-674b8bbfcf-nmzgd                   1/1     Running     1 (3m29s ago)   3m43s   10.244.120.66   minikube   <none>           <none>
+kube-system   etcd-minikube                              1/1     Running     0               3m49s   192.168.49.2    minikube   <none>           <none>
+kube-system   kube-apiserver-minikube                    1/1     Running     0               3m49s   192.168.49.2    minikube   <none>           <none>
+kube-system   kube-controller-manager-minikube           1/1     Running     0               3m49s   192.168.49.2    minikube   <none>           <none>
+kube-system   kube-proxy-br456                           1/1     Running     0               3m44s   192.168.49.2    minikube   <none>           <none>
+kube-system   kube-scheduler-minikube                    1/1     Running     0               3m49s   192.168.49.2    minikube   <none>           <none>
+kube-system   storage-provisioner                        1/1     Running     1 (3m12s ago)   3m47s   192.168.49.2    minikube   <none>           <none>
+monitoring    grafana-5bdc5854f6-wqr2g                   1/1     Running     0               94s     10.244.120.78   minikube   <none>           <none>
+monitoring    prometheus-5bcbccd757-9vscz                1/1     Running     0               94s     10.244.120.77   minikube   <none>           <none>
+pattern       audit-service-59589788cb-cxclq             1/1     Running     0               100s    10.244.120.75   minikube   <none>           <none>
+pattern       auth-service-7c99b8d8f7-fvk9m              1/1     Running     0               100s    10.244.120.71   minikube   <none>           <none>
+pattern       bootstrap-nn4kq                            0/1     Completed   0               110s    10.244.120.70   minikube   <none>           <none>
+pattern       delete-guard-6c59d9569b-g5dw4              1/1     Running     0               100s    10.244.120.72   minikube   <none>           <none>
+pattern       delete-guard-6c59d9569b-h65jt              1/1     Running     0               100s    10.244.120.73   minikube   <none>           <none>
+pattern       nginx-gateway-66bd4c444c-bh8d9             1/1     Running     0               94s     10.244.120.80   minikube   <none>           <none>
+pattern       nginx-gateway-66bd4c444c-v9nbt             1/1     Running     0               94s     10.244.120.79   minikube   <none>           <none>
+pattern       postgres-0                                 1/1     Running     0               3m24s   10.244.120.67   minikube   <none>           <none>
+pattern       quarantine-service-5f55cfbc9f-cg48h        1/1     Running     0               100s    10.244.120.74   minikube   <none>           <none>
+pattern       rabbitmq-0                                 1/1     Running     0               3m24s   10.244.120.68   minikube   <none>           <none>

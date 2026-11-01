@@ -1,0 +1,85 @@
+{
+  "mode": "cluster-https",
+  "steps": [
+    {
+      "step": "login owner",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "step": "login admin",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "step": "read available dataset",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "step": "quarantine",
+      "status": 202,
+      "expected": 202,
+      "ok": true
+    },
+    {
+      "step": "idempotent retry",
+      "status": 202,
+      "expected": 202,
+      "ok": true
+    },
+    {
+      "step": "quarantined data hidden",
+      "status": 410,
+      "expected": 410,
+      "ok": true
+    },
+    {
+      "step": "restore",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "step": "restored data readable",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "step": "R5 reference protected",
+      "status": 409,
+      "expected": 409,
+      "ok": true
+    },
+    {
+      "step": "R2 tampered policy blocked",
+      "status": 403,
+      "expected": 403,
+      "ok": true
+    },
+    {
+      "step": "purge fixture quarantined",
+      "status": 202,
+      "expected": 202,
+      "ok": true
+    },
+    {
+      "step": "purged data unavailable",
+      "status": 410,
+      "expected": 410,
+      "ok": true
+    },
+    {
+      "step": "audit chain",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    }
+  ],
+  "all_passed": true,
+  "notification_count": 11
+}
