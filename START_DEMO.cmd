@@ -8,7 +8,7 @@ py -3.12 -c "import sys; assert sys.version_info[:2] == (3, 12)" >nul 2>&1
 if not errorlevel 1 goto use_py
 python -c "import sys; assert sys.version_info[:2] == (3, 12)" >nul 2>&1
 if not errorlevel 1 goto use_python
-echo Не найден Python 3.12. Откройте docs\SHOWCASE.md: раздел запуска на компьютере.
+echo Не найден Python 3.12. Установите Python 3.12 с python.org и повторите запуск.
 goto failed
 :use_py
 if not exist ".venv\Scripts\python.exe" py -3.12 -m venv .venv
@@ -32,6 +32,6 @@ pause
 exit /b 0
 :failed
 echo Запуск не завершён. Скопируйте сообщение об ошибке из этого окна.
-echo Для показа без установки программ используйте GitHub Actions по инструкции docs\SHOWCASE.md.
+echo Для показа без установки программ используйте GitHub Actions в репозитории проекта.
 pause
 exit /b 1
