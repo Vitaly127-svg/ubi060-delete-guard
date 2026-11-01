@@ -24,6 +24,7 @@ jobs:
       - name: Verify HTTPS and deletion lifecycle
         run: |
           mkdir -p artifacts
+          kubectl -n pattern patch cronjob cleanup --type merge -p '{"spec":{"suspend":true}}'
           python scripts/demo.py --base "https://$(minikube ip):30443" --credentials .local/cluster/credentials.json --ca .local/tls.crt
           kubectl get pods -A -o wide > artifacts/pods.txt
           kubectl -n pattern logs deployment/audit-service --tail=100 > artifacts/audit.log

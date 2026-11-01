@@ -9,7 +9,7 @@ import psycopg
 from psycopg import sql
 from cassandra.cluster import Cluster
 from cassandra.auth import PlainTextAuthProvider
-from cassandra.io.asyncio import AsyncioConnection
+from cassandra.io.asyncioreactor import AsyncioConnection
 from cassandra.policies import DCAwareRoundRobinPolicy
 from app.db import Database
 from app.domain import Controller
