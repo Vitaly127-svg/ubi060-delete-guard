@@ -1,0 +1,48 @@
+name: Kubernetes smoke test
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cluster:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Install Minikube
+        run: |
+          curl -fsSLo /tmp/minikube https://storage.googleapis.com/minikube/releases/v1.36.0/minikube-linux-amd64
+          sudo install /tmp/minikube /usr/local/bin/minikube
+          minikube start --driver=docker --cni=calico --cpus=2 --memory=4096 --kubernetes-version=v1.33.1
+      - name: Deploy actual PostgreSQL Cassandra RabbitMQ and services
+        run: bash scripts/deploy.sh
+      - name: Verify HTTPS and deletion lifecycle
+        run: |
+          mkdir -p artifacts
+          python scripts/demo.py --base "https://$(minikube ip):30443" --credentials .local/cluster/credentials.json --ca .local/tls.crt
+          kubectl get pods -A -o wide > artifacts/pods.txt
+          kubectl -n pattern logs deployment/audit-service --tail=100 > artifacts/audit.log
+      - name: Collect diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts
+          kubectl get pods -A -o wide > artifacts/pods.txt || true
+          kubectl get events -A --sort-by=.lastTimestamp > artifacts/events.txt || true
+          kubectl -n pattern logs job/bootstrap --all-containers > artifacts/bootstrap.log 2>&1 || true
+          kubectl -n data logs statefulset/cassandra --tail=100 > artifacts/cassandra.log 2>&1 || true
+          for name in auth-service delete-guard quarantine-service audit-service nginx-gateway; do
+            kubectl -n pattern logs deployment/$name --all-containers --tail=100 > artifacts/$name.log 2>&1 || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cluster-verification
+          path: artifacts/
+      - name: Stop temporary cluster
+        if: always()
+        run: minikube delete || true
