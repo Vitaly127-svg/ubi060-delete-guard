@@ -6,6 +6,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +24,7 @@ from scripts.demo import demonstrate
 def main():
     parser = argparse.ArgumentParser();parser.add_argument("--smoke", action="store_true");args = parser.parse_args()
     os.chdir(ROOT)
-    root = initialize()
+    root = initialize(ROOT/".local"/("smoke-"+uuid.uuid4().hex)) if args.smoke else initialize()
     config = json.loads((root/"config.json").read_text())
     core = Controller(Database(config["database_url"]), LocalStorage(config["payload_path"]),
                       (root/"policy-public.pem").read_bytes())
