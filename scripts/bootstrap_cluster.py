@@ -9,7 +9,7 @@ import psycopg
 from psycopg import sql
 from cassandra.cluster import Cluster
 from cassandra.auth import PlainTextAuthProvider
-from cassandra.io.asyncioreactor import AsyncioConnection
+from cassandra.io.asyncorereactor import AsyncoreConnection
 from cassandra.policies import DCAwareRoundRobinPolicy
 from app.db import Database
 from app.domain import Controller
@@ -41,7 +41,7 @@ def bootstrap():
     for password in [cfg["cassandra_password"], "cassandra"]:
         try:
             cluster = Cluster(["cassandra.data.svc.cluster.local"],
-                auth_provider=PlainTextAuthProvider("cassandra", password), connection_class=AsyncioConnection,
+                auth_provider=PlainTextAuthProvider("cassandra", password), connection_class=AsyncoreConnection,
                 load_balancing_policy=DCAwareRoundRobinPolicy(local_dc="dc1"))
             session = cluster.connect();break
         except Exception:

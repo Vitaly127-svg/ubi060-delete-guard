@@ -7,7 +7,7 @@ from app.storage import CassandraStorage
 
 def test_cluster_bootstrap_imports_installed_driver():
     module = importlib.import_module("scripts.bootstrap_cluster")
-    assert module.AsyncioConnection.__module__ == "cassandra.io.asyncioreactor"
+    assert module.AsyncoreConnection.__module__ == "cassandra.io.asyncorereactor"
 
 
 def test_cassandra_statements_use_all_without_ttl():

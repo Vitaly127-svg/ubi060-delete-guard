@@ -49,11 +49,11 @@ class CassandraStorage:
                 if self.session is None:
                     from cassandra.cluster import Cluster
                     from cassandra.auth import PlainTextAuthProvider
-                    from cassandra.io.asyncioreactor import AsyncioConnection
+                    from cassandra.io.asyncorereactor import AsyncoreConnection
                     from cassandra.policies import DCAwareRoundRobinPolicy
                     self.cluster = Cluster(self.hosts,
                         auth_provider=PlainTextAuthProvider(self.user, self.password),
-                        connection_class=AsyncioConnection,
+                        connection_class=AsyncoreConnection,
                         load_balancing_policy=DCAwareRoundRobinPolicy(local_dc="dc1"))
                     self.session = self.cluster.connect("ubi060")
         return self.session

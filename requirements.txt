@@ -6,6 +6,7 @@ cryptography==44.0.3
 httpx==0.28.1
 aio-pika==9.5.5
 cassandra-driver==3.29.2
+pyasyncore==1.0.5
 psycopg[binary]==3.2.9
 prometheus-client==0.21.1
 PyYAML==6.0.2
